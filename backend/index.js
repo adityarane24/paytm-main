@@ -3,29 +3,46 @@ require('dotenv').config();
 const cors = require("cors");
 const app = express();
 
-// 1. Enable CORS for network requests
-app.use(cors());
+// 1. Fixed Dynamic CORS configuration
+const clientUrl = process.env.CLIENT_URL || "https://paytm-main-zvxx-nine.vercel.app";
 
-// 2. THIS LINE IS CRITICAL: It parses incoming JSON request bodies!
-app.use(express.json()); 
-
-// 3. PERMANENT FIX: Catch-all header injection & OPTIONS interceptor middleware
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
-    res.header("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization");
+app.use(cors({
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
     
-    // Explicitly intercept OPTIONS preflight requests and answer immediately with a clean 200 OK
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
+    // Allow matching production URL or localhost during testing
+    if (origin === clientUrl || origin.startsWith("http://localhost:")) {
+      return callback(null, true);
     }
-    next();
+    
+    return callback(new Error('CORS policy: origin not allowed'));
+  },
+  credentials: true,
+}));
+
+// Parse JSON bodies
+app.use(express.json());
+
+// 2. Direct Header Injection Interceptor
+app.use((req, res, next) => {
+  const originHeader = req.headers.origin || clientUrl;
+  
+  res.header("Access-Control-Allow-Origin", originHeader);
+  res.header("Access-Control-Allow-Credentials", "true");
+  res.header("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
+  res.header("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization");
+
+  // Handle preflight instantly before routers execute
+  if (req.method === "OPTIONS") {
+    return res.sendStatus(200);
+  }
+  next();
 });
 
 const mainRouter = require("./routes/index");
 
-// 4. Make sure your main router is declared AFTER app.use(express.json())
+// Mount API routes
 app.use("/api/v1", mainRouter);
 
 const PORT = process.env.PORT || 3000;
