@@ -28,12 +28,12 @@ export function Signup() {
                     onChange={(e) => setPassword(e.target.value)} />
 
                 <button onClick={async () => {
-                    const response = await axios.post("https://your-backend-api.vercel.app/api/v1/user/signup", {
-                        username,
-                        firstName,
-                        lastName,
-                        password
-                    });
+                    const response = await axios.post("https://paytm-backend-api.vercel.app/api/v1/user/signup", {
+                    username,
+                    firstName,
+                    lastName,
+                    password
+                });
                     localStorage.setItem("token", response.data.token);
                     navigate("/dashboard");
                 }} className="bg-slate-800 text-white p-2 w-full rounded hover:bg-slate-900">
