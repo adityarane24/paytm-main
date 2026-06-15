@@ -10,45 +10,38 @@ const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret";
 const { authMiddleware } = require("../authMiddleware");
 
 // 1. SIGNUP ROUTER ENDPOINT
-router.post("/signup", async (req, res) => {
+router.post("/signin", async (req, res) => {
     try {
-        const username = req.body.username || req.body.email;
+        // Fallback structural safety map: check all common variations
+        const username = req.body.username || req.body.email || req.body.usernameField;
         const password = req.body.password;
-        const firstName = req.body.firstName || req.body.firstname;
-        const lastName = req.body.lastName || req.body.lastname;
 
-        if (!username || !password || !firstName || !lastName) {
-            return res.status(400).json({ message: "Missing required fields" });
+        if (!username || !password) {
+            return res.status(400).json({ 
+                message: "Username/Email and password are required fields" 
+            });
         }
 
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(411).json({ message: "Email already taken" });
+        // Find the user entry in MongoDB
+        const user = await User.findOne({ username, password });
+        
+        if (!user) {
+            return res.status(411).json({ 
+                message: "Invalid login credentials match" 
+            });
         }
 
-        const user = await User.create({
-            username,
-            password,
-            firstName,
-            lastName
-        });
+        // Generate the authentic JWT Session token string safely
+        const token = jwt.sign({ userId: user._id }, JWT_SECRET);
 
-        const userId = user._id;
-        await Account.create({
-            userId,
-            balance: 1 + Math.random() * 10000
-        });
-
-        const token = jwt.sign({ userId }, JWT_SECRET);
-
-        return res.json({
-            message: "User created successfully",
-            token: token
-        });
+        return res.json({ token });
 
     } catch (error) {
-        console.error("Signup Error:", error);
-        return res.status(500).json({ message: "Internal server error", error: error.message });
+        console.error("Internal Signin Error Hook Triggered:", error);
+        return res.status(500).json({ 
+            message: "Internal server error processing login sequence", 
+            error: error.message 
+        });
     }
 });
 
