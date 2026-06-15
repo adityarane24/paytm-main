@@ -1,5 +1,6 @@
 // Ensure JWT_SECRET is declared at the top of this user.js file
 const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret";
+const { authMiddleware } = require("../authMiddleware");
 
 router.post("/signin", async (req, res) => {
     try {
