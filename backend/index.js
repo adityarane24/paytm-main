@@ -1,25 +1,25 @@
 const express = require("express");
 require('dotenv').config();
+const cors = require("cors");
 const app = express();
 
-// 1. MANUAL CORS HEADERS INTERCEPTOR (MUST RUN FIRST)
+// 1. Wide-open configuration for native application parsing
+app.use(cors());
+app.use(express.json()); 
+
+// 2. Fallback manual header interceptor
 app.use((req, res, next) => {
-    res.setHeader("Access-Control-Allow-Origin", "*");
-    res.setHeader("Access-Control-Allow-Credentials", "true");
-    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,PATCH,DELETE");
-    res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization");
+    res.header("Access-Control-Allow-Origin", "*");
+    res.header("Access-Control-Allow-Credentials", "true");
+    res.header("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
+    res.header("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization");
     
-    // If the browser is just checking connection permissions via OPTIONS, reply 200 OK instantly
     if (req.method === "OPTIONS") {
-        return res.status(200).end();
+        return res.sendStatus(200);
     }
     next();
 });
 
-// 2. Parse incoming JSON payloads
-app.use(express.json());
-
-// 3. Mount your application routers
 const mainRouter = require("./routes/index");
 app.use("/api/v1", mainRouter);
 
