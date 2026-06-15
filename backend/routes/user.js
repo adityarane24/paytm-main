@@ -76,5 +76,44 @@ router.post("/signin", async (req, res) => {
         return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
+// 3. BULK SEARCH ENDPOINT (Loads users onto your dashboard screen)
+router.get("/bulk", async (req, res) => {
+    try {
+        // Read the filter parameter (e.g., ?filter=Rahul) or fallback to an empty string to return everyone
+        const filter = req.query.filter || "";
+
+        // Query MongoDB with a case-insensitive regex pattern matching first or last name
+        const users = await User.find({
+            $or: [{
+                firstName: {
+                    "$regex": filter,
+                    "$options": "i"
+                }
+            }, {
+                lastName: {
+                    "$regex": filter,
+                    "$options": "i"
+                }
+            }]
+        });
+
+        // Map and return data fields safely (Never expose the plain text passwords!)
+        return res.json({
+            user: users.map(user => ({
+                username: user.username,
+                firstName: user.firstName,
+                lastName: user.lastName,
+                _id: user._id
+            }))
+        });
+
+    } catch (error) {
+        console.error("Bulk Search Error:", error);
+        return res.status(500).json({ 
+            message: "Internal server error fetching user database listings",
+            error: error.message 
+        });
+    }
+});
 
 module.exports = router;
