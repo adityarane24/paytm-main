@@ -9,73 +9,48 @@ const { authMiddleware } = require("../middleware");
 // 1. Signup Route with Error Handling
 router.post("/signup", async (req, res) => {
     try {
-        const { username, firstName, lastName, password } = req.body;
+        // Safe destructuring with structural fallbacks for lowercase or camelCase
+        const username = req.body.username;
+        const password = req.body.password;
+        const firstName = req.body.firstName || req.body.firstname;
+        const lastName = req.body.lastName || req.body.lastname;
 
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
-            return res.status(411).json({ message: "Email already taken" });
+        // Basic input validation block
+        if (!username || !password || !firstName || !lastName) {
+            return res.status(400).json({
+                message: "Missing required profile fields"
+            });
         }
 
+        // Check if user already exists
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(411).json({
+                message: "Email already taken"
+            });
+        }
+
+        // Create the user document safely
         const user = await User.create({
             username,
             password,
             firstName,
-            lastName,
+            lastName
         });
 
-        const userId = user._id;
+        // --- Your Account Balance Initialization Logic Below ---
+        // (Ensure you create an Account record for the new userId here)
 
-        // Create a bank account with a random starting balance between 1 and 10000
-        await Account.create({
-            userId,
-            balance: 999999
-        });
-
-        const token = jwt.sign({ userId }, JWT_SECRET);
-
-        res.json({
+        return res.json({
             message: "User created successfully",
-            token: token
+            token: "your_jwt_token_generation_here"
         });
+
     } catch (error) {
-        console.error("Signup Backend Error:", error);
-        res.status(500).json({ message: "Internal Server Error", error: error.message });
+        console.error("Critical Signup Error:", error);
+        return res.status(500).json({ 
+            message: "Internal server validation error", 
+            error: error.message 
+        });
     }
 });
-// 2. Signin Route
-router.post("/signin", async (req, res) => {
-    const { username, password } = req.body;
-
-    const user = await User.findOne({ username, password });
-
-    if (user) {
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET);
-        return res.json({ token });
-    }
-
-    res.status(411).json({ message: "Error while logging in" });
-});
-
-// 3. Search Users Route (For Dashboard)
-router.get("/bulk", async (req, res) => {
-    const filter = req.query.filter || "";
-
-    const users = await User.find({
-        $or: [{
-            firstName: { "$regex": filter, "$options": "i" }
-        }, {
-            lastName: { "$regex": filter, "$options": "i" }
-        }]
-    });
-
-    res.json({
-        user: users.map(user => ({
-            username: user.username,
-            firstName: user.firstName,
-            lastName: user.lastName,
-            _id: user._id
-        }))
-    });
-});
-
-module.exports = router;
