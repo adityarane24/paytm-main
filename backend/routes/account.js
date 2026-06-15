@@ -1,5 +1,5 @@
     const express = require('express');
-    const { authMiddleware } = require('../middleware');
+    const { authMiddleware } = require('../authMiddleware');
     const { Account } = require('../db');
     const mongoose = require('mongoose');
 

@@ -3,10 +3,9 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const { User, Account } = require("../db");
 const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret"; 
-const { authMiddleware } = require("../middleware");
+const { authMiddleware } = require("../authMiddleware");
 
-// 1. Signup Route
-// 1. Signup Route with Error Handling
+// 1. Signup Route with Complete Operational Logic
 router.post("/signup", async (req, res) => {
     try {
         // Safe destructuring with structural fallbacks for lowercase or camelCase
@@ -38,12 +37,22 @@ router.post("/signup", async (req, res) => {
             lastName
         });
 
-        // --- Your Account Balance Initialization Logic Below ---
-        // (Ensure you create an Account record for the new userId here)
+        // FIX 1: Generate a real bank wallet record for the new user profile
+        const userId = user._id;
+        await Account.create({
+            userId,
+            balance: 1 + Math.random() * 10000 // Assigns a random opening balance
+        });
 
+        // FIX 2: Sign a genuine JWT Session token containing their new user ID
+        const token = jwt.sign({
+            userId
+        }, JWT_SECRET);
+
+        // Return operational data payloads back to the client-side app
         return res.json({
             message: "User created successfully",
-            token: "your_jwt_token_generation_here"
+            token: token
         });
 
     } catch (error) {
@@ -54,3 +63,5 @@ router.post("/signup", async (req, res) => {
         });
     }
 });
+
+module.exports = router; // Make sure the router instance is exported!
