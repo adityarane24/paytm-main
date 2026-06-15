@@ -1,29 +1,34 @@
 const express = require("express");
-require('dotenv').config();
 const cors = require("cors");
+const mainRouter = require("./routes/index");
+
 const app = express();
 
-// 1. Wide-open configuration for native application parsing
-app.use(cors());
-app.use(express.json()); 
+// 1. Enable clean, wide-open CORS policy for incoming requests
+app.use(cors({
+    origin: "*",
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"]
+}));
 
-// 2. Fallback manual header interceptor
-app.use((req, res, next) => {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Credentials", "true");
-    res.header("Access-Control-Allow-Methods", "GET,OPTIONS,PATCH,DELETE,POST,PUT");
-    res.header("Access-Control-Allow-Headers", "X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version, Authorization");
-    
-    if (req.method === "OPTIONS") {
-        return res.sendStatus(200);
-    }
-    next();
-});
+app.use(express.json());
 
-const mainRouter = require("./routes/index");
+// 2. Clear out preflight OPTIONS checks instantly before routing can crash
+app.options("*", cors());
+
+// 3. Attach your main routing endpoints
 app.use("/api/v1", mainRouter);
+
+// 4. Global Error Catching Middleware (Stops Vercel from dropping the connection on code crashes)
+app.use((err, req, res, next) => {
+    console.error("Global Server Error:", err);
+    res.status(500).json({
+        message: "Internal Server Error Hook triggered",
+        error: err.message
+    });
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
+    console.log(`Server running safely on port ${PORT}`);
 });
