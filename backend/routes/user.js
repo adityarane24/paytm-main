@@ -3,45 +3,49 @@ const router = express.Router();
 const jwt = require("jsonwebtoken");
 const { User, Account } = require("../db");
 
-// Safe environment secret key initialization
 const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret"; 
-
-// Absolute path safe import of your renamed middleware file
 const { authMiddleware } = require("../authMiddleware");
 
-// 1. SIGNUP ROUTER ENDPOINT
-router.post("/signin", async (req, res) => {
+// 1. SIGNUP ROUTER ENDPOINT (FIXED: Replaced duplicate signin endpoint with signup)
+router.post("/signup", async (req, res) => {
     try {
-        // Fallback structural safety map: check all common variations
-        const username = req.body.username || req.body.email || req.body.usernameField;
+        const username = req.body.username || req.body.email;
         const password = req.body.password;
+        const firstName = req.body.firstName || req.body.firstname;
+        const lastName = req.body.lastName || req.body.lastname;
 
-        if (!username || !password) {
-            return res.status(400).json({ 
-                message: "Username/Email and password are required fields" 
-            });
+        if (!username || !password || !firstName || !lastName) {
+            return res.status(400).json({ message: "Missing required fields" });
         }
 
-        // Find the user entry in MongoDB
-        const user = await User.findOne({ username, password });
-        
-        if (!user) {
-            return res.status(411).json({ 
-                message: "Invalid login credentials match" 
-            });
+        const existingUser = await User.findOne({ username });
+        if (existingUser) {
+            return res.status(411).json({ message: "Email already taken" });
         }
 
-        // Generate the authentic JWT Session token string safely
-        const token = jwt.sign({ userId: user._id }, JWT_SECRET);
+        const user = await User.create({
+            username,
+            password,
+            firstName,
+            lastName
+        });
 
-        return res.json({ token });
+        const userId = user._id;
+        await Account.create({
+            userId,
+            balance: 1 + Math.random() * 10000
+        });
+
+        const token = jwt.sign({ userId }, JWT_SECRET);
+
+        return res.json({
+            message: "User created successfully",
+            token: token
+        });
 
     } catch (error) {
-        console.error("Internal Signin Error Hook Triggered:", error);
-        return res.status(500).json({ 
-            message: "Internal server error processing login sequence", 
-            error: error.message 
-        });
+        console.error("Signup Error:", error);
+        return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
 
@@ -69,13 +73,12 @@ router.post("/signin", async (req, res) => {
         return res.status(500).json({ message: "Internal server error", error: error.message });
     }
 });
-// 3. BULK SEARCH ENDPOINT (Loads users onto your dashboard screen)
+
+// 3. BULK SEARCH ENDPOINT
 router.get("/bulk", async (req, res) => {
     try {
-        // Read the filter parameter (e.g., ?filter=Rahul) or fallback to an empty string to return everyone
         const filter = req.query.filter || "";
 
-        // Query MongoDB with a case-insensitive regex pattern matching first or last name
         const users = await User.find({
             $or: [{
                 firstName: {
@@ -90,7 +93,6 @@ router.get("/bulk", async (req, res) => {
             }]
         });
 
-        // Map and return data fields safely (Never expose the plain text passwords!)
         return res.json({
             user: users.map(user => ({
                 username: user.username,

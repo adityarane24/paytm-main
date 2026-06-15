@@ -8,7 +8,6 @@ import { Button } from "../Components/Button";
 import { InputBox } from "../Components/InputBox";
 
 export const Signin = () => {
-    // 1. Create states to store email and password values
     const [username, setUsername] = useState("");
     const [password, setPassword] = useState("");
     const navigate = useNavigate();
@@ -20,7 +19,6 @@ export const Signin = () => {
                     <Heading lable={"Sign in"} />
                     <SubHeading lable={"Enter your information to log in to your account"} />
                     
-                    {/* 2. Bind onChange to capture input text */}
                     <InputBox 
                         onChange={(e) => setUsername(e.target.value)} 
                         placeholder="Aditya@gmail.com" 
@@ -33,19 +31,16 @@ export const Signin = () => {
                     />
                     
                     <div className="pt-4">
-                        {/* 3. Execute the production backend call when button is clicked */}
                         <Button 
                             onClick={async () => {
                                 try {
+                                    // FIXED: Passing "username" instead of the undefined "email" reference
                                     const response = await axios.post("https://paytm-backend-api.vercel.app/api/v1/user/signin", {
-                                    email,     // Or username
-                                    password
-                                });
+                                        username, 
+                                        password
+                                    });
                                     
-                                    // Store the returned authentication token
                                     localStorage.setItem("token", response.data.token);
-                                    
-                                    // Send user directly to dashboard on success
                                     navigate("/dashboard");
                                 } catch (error) {
                                     alert("Invalid credentials or server error!");
