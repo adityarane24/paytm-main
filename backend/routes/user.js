@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const jwt = require("jsonwebtoken");
 const { User, Account } = require("../db");
-const JWT_SECRET = require("../config");
+const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret"; 
 const { authMiddleware } = require("../middleware");
 
 // 1. Signup Route
