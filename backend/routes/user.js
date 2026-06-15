@@ -3,10 +3,17 @@ const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret";
 
 router.post("/signin", async (req, res) => {
     try {
-        const username = req.body.username;
+        // Safe check: accept either username OR email from the frontend body payload
+        const username = req.body.username || req.body.email;
         const password = req.body.password;
 
-        // Find the user in the database
+        if (!username || !password) {
+            return res.status(400).json({
+                message: "Missing email/username or password"
+            });
+        }
+
+        // Find the user in your database collection
         const user = await User.findOne({
             username: username,
             password: password
@@ -14,11 +21,11 @@ router.post("/signin", async (req, res) => {
 
         if (!user) {
             return res.status(411).json({
-                message: "Error while logging in"
+                message: "Invalid credentials"
             });
         }
 
-        // Generate a real token using the secret key fallback
+        // Generate the authentic JWT Token session
         const token = jwt.sign({
             userId: user._id
         }, JWT_SECRET);
@@ -28,7 +35,7 @@ router.post("/signin", async (req, res) => {
         });
 
     } catch (error) {
-        console.error("Signin Route Error:", error);
+        console.error("Critical Signin Route Error:", error);
         return res.status(500).json({ 
             message: "Internal server error during login",
             error: error.message 
