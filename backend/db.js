@@ -7,27 +7,29 @@ mongoose.connect(dbURI)
   .then(() => console.log("Successfully connected to MongoDB Atlas!"))
   .catch((err) => console.error("Database connection error:", err));
 
+// Inside backend/db.js
 const userSchema = new mongoose.Schema({
     username: {
         type: String,
         required: true,
         unique: true,
-        minlength: 3,
-        maxlength: 30
+        trim: true,
+        lowercase: true,
+        minLength: 3,
+        maxLength: 50
     },
-    password:{
-        type : String,
-        required : true,
-        minlength: 8,
-        maxlength: 100
+    password: {
+        type: String,
+        required: true,
+        minLength: 6
     },
-    firstName: {
+    firstName: { // 🧠 Make sure this is camelCase, NOT lowercase 'firstname'
         type: String,
         required: true,
         trim: true,
         maxLength: 50
     },
-    lastName: {
+    lastName: {  // 🧠 Make sure this is camelCase, NOT lowercase 'lastname'
         type: String,
         required: true,
         trim: true,
@@ -49,7 +51,7 @@ const accountSchema = new mongoose.Schema({
 
 const Account = mongoose.model("Account",accountSchema);
 
-const User = mongoose.model("User", userSchema);
+const user = await User.create({ username, password, firstName, lastName });
 
 module.exports= {
     User,

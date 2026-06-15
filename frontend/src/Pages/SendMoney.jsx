@@ -1,4 +1,4 @@
-import { useSearchParams } from 'react-router-dom';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import { useState } from 'react';
 
@@ -7,6 +7,7 @@ export function SendMoney() {
     const id = searchParams.get("id");
     const name = searchParams.get("name");
     const [amount, setAmount] = useState(0);
+    const navigate = useNavigate();
 
     return (
         <div className="flex justify-center h-screen bg-gray-100 items-center">
@@ -29,11 +30,10 @@ export function SendMoney() {
                                 </label>
                                 <input
                                     onChange={(e) => {
-                                        // Force conversion to a base-10 number immediately on input
                                         setAmount(Number(e.target.value)); 
                                     }}
-                                    type="number" // Enforces numeric keyboard and input constraints
-                                    min="1"       // Prevents users from entering negative values
+                                    type="number"
+                                    min="1"
                                     className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
                                     id="amount"
                                     placeholder="Enter amount"
@@ -42,7 +42,8 @@ export function SendMoney() {
                             <button 
                                 onClick={async () => {
                                     try {
-                                        const response = await axios.post("paytm-backend-api.vercel.app", {
+                                        // FIXED: Absolute URL target mapping explicitly to the transaction controller route
+                                        const response = await axios.post("https://paytm-backend-api.vercel.app/api/v1/account/transfer", {
                                             to: id,
                                             amount: Number(amount)
                                         }, {
@@ -50,12 +51,14 @@ export function SendMoney() {
                                                 Authorization: "Bearer " + localStorage.getItem("token")
                                             }
                                         });
+                                        
                                         alert("Transfer Successful!");
+                                        navigate("/dashboard"); // Take the user right back to their balance statement
                                     } catch (err) {
                                         alert(err.response?.data?.message || "Transfer Failed!");
                                     }
                                 }} 
-                                className="justify-center rounded-md text-sm font-medium ring-offset-background transition-colors h-10 px-4 py-2 w-full bg-green-500 text-white"
+                                className="justify-center rounded-md text-sm font-medium ring-offset-background transition-colors h-10 px-4 py-2 w-full bg-green-500 text-white hover:bg-green-600 cursor-pointer"
                             >
                                 Initiate Transfer
                             </button>
