@@ -1,6 +1,9 @@
 const mongoose = require('mongoose');
 
-mongoose.connect("mongodb+srv://paytm:aditya123@cluster0.ce8eang.mongodb.net/paytm")
+// Fallback to your connection string if the cloud environment variable isn't active
+const dbURI = process.env.MONGO_URI || "mongodb+srv://paytm:aditya123@cluster0.ce8eang.mongodb.net/paytm";
+
+mongoose.connect(dbURI)
   .then(() => console.log("Successfully connected to MongoDB Atlas!"))
   .catch((err) => console.error("Database connection error:", err));
 
