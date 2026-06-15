@@ -1,67 +1,37 @@
-const express = require('express');
-const router = express.Router();
-const jwt = require("jsonwebtoken");
-const { User, Account } = require("../db");
-const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret"; 
-const { authMiddleware } = require("../authMiddleware");
+// Ensure JWT_SECRET is declared at the top of this user.js file
+const JWT_SECRET = process.env.JWT_SECRET || "adityaSecret";
 
-// 1. Signup Route with Complete Operational Logic
-router.post("/signup", async (req, res) => {
+router.post("/signin", async (req, res) => {
     try {
-        // Safe destructuring with structural fallbacks for lowercase or camelCase
         const username = req.body.username;
         const password = req.body.password;
-        const firstName = req.body.firstName || req.body.firstname;
-        const lastName = req.body.lastName || req.body.lastname;
 
-        // Basic input validation block
-        if (!username || !password || !firstName || !lastName) {
-            return res.status(400).json({
-                message: "Missing required profile fields"
-            });
-        }
+        // Find the user in the database
+        const user = await User.findOne({
+            username: username,
+            password: password
+        });
 
-        // Check if user already exists
-        const existingUser = await User.findOne({ username });
-        if (existingUser) {
+        if (!user) {
             return res.status(411).json({
-                message: "Email already taken"
+                message: "Error while logging in"
             });
         }
 
-        // Create the user document safely
-        const user = await User.create({
-            username,
-            password,
-            firstName,
-            lastName
-        });
-
-        // FIX 1: Generate a real bank wallet record for the new user profile
-        const userId = user._id;
-        await Account.create({
-            userId,
-            balance: 1 + Math.random() * 10000 // Assigns a random opening balance
-        });
-
-        // FIX 2: Sign a genuine JWT Session token containing their new user ID
+        // Generate a real token using the secret key fallback
         const token = jwt.sign({
-            userId
+            userId: user._id
         }, JWT_SECRET);
 
-        // Return operational data payloads back to the client-side app
         return res.json({
-            message: "User created successfully",
             token: token
         });
 
     } catch (error) {
-        console.error("Critical Signup Error:", error);
+        console.error("Signin Route Error:", error);
         return res.status(500).json({ 
-            message: "Internal server validation error", 
+            message: "Internal server error during login",
             error: error.message 
         });
     }
 });
-
-module.exports = router; // Make sure the router instance is exported!
