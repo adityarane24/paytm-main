@@ -1,16 +1,25 @@
 const express = require("express");
 require('dotenv').config();
-const cors = require("cors");
 const app = express();
 
-// Standard wide-open CORS for internal application handling
-app.use(cors({
-  origin: "https://paytm-main-zvxx-nine.vercel.app",
-  credentials: true
-}));
+// 1. MANUAL CORS HEADERS INTERCEPTOR (MUST RUN FIRST)
+app.use((req, res, next) => {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+    res.setHeader("Access-Control-Allow-Credentials", "true");
+    res.setHeader("Access-Control-Allow-Methods", "GET,HEAD,OPTIONS,POST,PUT,PATCH,DELETE");
+    res.setHeader("Access-Control-Allow-Headers", "Access-Control-Allow-Headers, Origin, Accept, X-Requested-With, Content-Type, Access-Control-Request-Method, Access-Control-Request-Headers, Authorization");
+    
+    // If the browser is just checking connection permissions via OPTIONS, reply 200 OK instantly
+    if (req.method === "OPTIONS") {
+        return res.status(200).end();
+    }
+    next();
+});
 
-app.use(express.json()); 
+// 2. Parse incoming JSON payloads
+app.use(express.json());
 
+// 3. Mount your application routers
 const mainRouter = require("./routes/index");
 app.use("/api/v1", mainRouter);
 
