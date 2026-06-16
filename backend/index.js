@@ -1,33 +1,13 @@
-const express = require("express");
-const cors = require("cors");
-const mainRouter = require("./routes/index");
-
+const express = require('express');
+const cors = require('cors');
 const app = express();
 
-// Handle CORS cleanly via middleware
+// Enable CORS for your specific frontend origin
 app.use(cors({
-    origin: "https://paytm-main-zvxx-nine.vercel.app",
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+  origin: 'https://paytm-main-zvxx-nine.vercel.app',
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization']
 }));
 
-app.use(express.json());
-
-// Main routing endpoints
-app.use("/api/v1", mainRouter);
-
-// Global Error Catching Middleware
-app.use((err, req, res, next) => {
-    console.error("Global Server Error:", err);
-    res.status(500).json({
-        message: "Internal Server Error Hook triggered",
-        error: err.message
-    });
-});
-
-module.exports = app;
-
-const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => {
-    console.log(`Server running safely on port ${PORT}`);
-});
+// Ensure this middleware is placed BEFORE your routes
+app.use('/api/v1/user', userRouter);
