@@ -4,26 +4,19 @@ const mainRouter = require("./routes/index");
 
 const app = express();
 
-const corsOptions = {
+// Handle CORS cleanly via middleware
+app.use(cors({
     origin: "https://paytm-main-zvxx-nine.vercel.app",
-    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
     credentials: true,
-    optionsSuccessStatus: 200 // Explicitly forces 200 OK status for preflight OPTIONS requests
-};
-
-// 1. Apply CORS options
-app.use(cors(corsOptions));
-
-// 2. Handle preflight requests explicitly at the application level
-app.options("*", cors(corsOptions));
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"]
+}));
 
 app.use(express.json());
 
-// 3. Attach your main routing endpoints
+// Main routing endpoints
 app.use("/api/v1", mainRouter);
 
-// 4. Global Error Catching Middleware
+// Global Error Catching Middleware
 app.use((err, req, res, next) => {
     console.error("Global Server Error:", err);
     res.status(500).json({
@@ -32,7 +25,6 @@ app.use((err, req, res, next) => {
     });
 });
 
-// For Vercel Serverless compatibility
 module.exports = app;
 
 const PORT = process.env.PORT || 3000;
