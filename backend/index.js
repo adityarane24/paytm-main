@@ -4,22 +4,26 @@ const mainRouter = require("./routes/index");
 
 const app = express();
 
-// 1. Enable clean, wide-open CORS policy for incoming requests
-app.use(cors({
-    origin: "*",
-    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"]
-}));
+const corsOptions = {
+    origin: "https://paytm-main-zvxx-nine.vercel.app",
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With", "Accept"],
+    credentials: true,
+    optionsSuccessStatus: 200 // Explicitly forces 200 OK status for preflight OPTIONS requests
+};
+
+// 1. Apply CORS options
+app.use(cors(corsOptions));
+
+// 2. Handle preflight requests explicitly at the application level
+app.options("*", cors(corsOptions));
 
 app.use(express.json());
-
-// 2. Clear out preflight OPTIONS checks instantly before routing can crash
-app.options("*", cors());
 
 // 3. Attach your main routing endpoints
 app.use("/api/v1", mainRouter);
 
-// 4. Global Error Catching Middleware (Stops Vercel from dropping the connection on code crashes)
+// 4. Global Error Catching Middleware
 app.use((err, req, res, next) => {
     console.error("Global Server Error:", err);
     res.status(500).json({
@@ -27,6 +31,9 @@ app.use((err, req, res, next) => {
         error: err.message
     });
 });
+
+// For Vercel Serverless compatibility
+module.exports = app;
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
